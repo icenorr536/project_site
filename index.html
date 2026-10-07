@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Спица — веломастерская</title>
+  <meta name="description" content="Веломастерская «Спица»: ремонт и обслуживание велосипедов за один день.">
+
+  <!-- Шрифты (поддерживают кириллицу) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;700&family=Unbounded:wght@500;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* ============ 1. CSS-ПЕРЕМЕННЫЕ ============ */
+    :root {
+      --ink: #14283A;      /* основной тёмный цвет (текст, заголовки) */
+      --paper: #F3F5F2;    /* фон страницы */
+      --steel: #5B6B75;    /* второстепенный текст */
+      --signal: #F2C230;   /* акцентный жёлтый */
+      --line: #CBD3D6;     /* тонкие линии и рамки */
+      --error: #C8312B;    /* ошибка в форме */
+      --ok: #2E7D4F;       /* успех в форме */
+      --radius: 6px;
+      --font-head: "Unbounded", Arial, sans-serif;
+      --font-body: "Onest", Arial, sans-serif;
+    }
+
+    /* ============ 2. БАЗА И БЛОЧНАЯ МОДЕЛЬ ============ */
+    /* border-box: padding и border входят в ширину элемента */
+    *, *::before, *::after { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      font-family: var(--font-body);
+      font-size: 1.0625rem;
+      line-height: 1.6;
+      color: var(--ink);
+      background: var(--paper);
+    }
+
+    h1, h2, h3 {
+      font-family: var(--font-head);
+      line-height: 1.15;
+      margin: 0 0 1rem;
+    }
+    h1 { font-size: clamp(2rem, 5vw, 3.5rem); }
+    h2 { font-size: clamp(1.5rem, 3.5vw, 2.25rem); }
+    h3 { font-size: 1.1rem; }
+
+    p { margin: 0 0 1rem; max-width: 60ch; }
+
+    a { color: inherit; }
+
+    /* Видимый фокус для клавиатуры */
+    :focus-visible {
+      outline: 3px solid var(--signal);
+      outline-offset: 3px;
+    }
+
+    /* Общий контейнер: центрирует содержимое и задаёт отступы по бокам */
+    .container {
+      width: 100%;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+
+    .section { padding: 4.5rem 0; }
+
+    /* ============ 3. ШАПКА (FLEXBOX + position: sticky) ============ */
+    .site-header {
+      position: sticky;          /* шапка «прилипает» к верху экрана */
+      top: 0;
+      z-index: 10;
+      background: var(--paper);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .header-inner {
+      display: flex;             /* Flexbox: логотип слева, меню справа */
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      padding-top: 0.9rem;
+      padding-bottom: 0.9rem;
+    }
+
+    .logo {
+      font-family: var(--font-head);
+      font-weight: 700;
+      font-size: 1.35rem;
+      text-decoration: none;
+    }
+
+    .nav-list {
+      display: flex;
+      gap: 1.75rem;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Ссылка меню с анимированным подчёркиванием через ::after */
+    .nav-list a {
+      position: relative;
+      text-decoration: none;
+      font-weight: 500;
+      padding: 0.25rem 0;
+    }
+    .nav-list a::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: 100%;
+      height: 3px;
+      background: var(--signal);
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.3s ease;
+    }
+    .nav-list a:hover::after,
+    .nav-list a:focus-visible::after { transform: scaleX(1); }
+
+    /* ============ 4. ГЛАВНЫЙ ЭКРАН (GRID + position: relative/absolute) ============ */
+    .hero { padding: 4rem 0 5rem; }
+
+    .hero-inner {
+      display: grid;             /* Grid: две колонки — текст и колесо */
+      grid-template-columns: 1.1fr 0.9fr;
+      align-items: center;
+      gap: 3rem;
+    }
+
+    .hero-lead {
+      font-size: 1.2rem;
+      color: var(--steel);
+    }
+
+    /* Кнопка */
+    .btn {
+      display: inline-block;
+      padding: 0.9rem 1.75rem;
+      border: 2px solid var(--ink);
+      border-radius: var(--radius);
+      background: var(--signal);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+      transition: background-color 0.25s ease, color 0.25s ease, transform 0.25s ease;
+    }
+    .btn:hover {
+      background: var(--ink);
+      color: var(--signal);
+      transform: translateY(-2px);
+    }
+
+    /* Колесо — главный визуальный акцент страницы, нарисовано только на CSS */
+    .hero-visual {
+      position: relative;        /* точка отсчёта для бейджа */
+      display: grid;
+      place-items: center;
+    }
+
+    .wheel {
+      position: relative;
+      width: min(380px, 80vw);
+      aspect-ratio: 1;
+      border: 18px solid var(--ink);
+      border-radius: 50%;
+      /* спицы: повторяющийся конический градиент */
+      background: repeating-conic-gradient(var(--steel) 0 1deg, transparent 1deg 10deg);
+      animation: spin 16s linear infinite;
+    }
+    /* ::before — втулка в центре колеса */
+    .wheel::before {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 60px;
+      height: 60px;
+      margin: -30px 0 0 -30px;
+      border: 8px solid var(--ink);
+      border-radius: 50%;
+      background: var(--signal);
+    }
+    /* ::after — внутренний ободок */
+    .wheel::after {
+      content: "";
+      position: absolute;
+      inset: 12px;
+      border: 3px solid var(--signal);
+      border-radius: 50%;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Бейдж поверх колеса: position: absolute */
+    .badge {
+      position: absolute;
+      right: 0;
+      bottom: 1rem;
+      padding: 0.6rem 1rem;
+      background: var(--ink);
+      color: var(--paper);
+      border-radius: var(--radius);
+      font-weight: 500;
+      font-size: 0.95rem;
+    }
+
+    /* ============ 5. УСЛУГИ (GRID) ============ */
+    .services-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem 2.5rem;
+      margin-top: 2.5rem;
+    }
+
+    .service {
+      padding-top: 1rem;
+      border-top: 3px solid var(--ink);
+    }
+    .service p { color: var(--steel); margin: 0; }
+
+    /* :nth-child — каждая третья услуга получает жёлтую линию */
+    .service:nth-child(3n) { border-top-color: var(--signal); }
+
+    /* ============ 6. КАК МЫ РАБОТАЕМ (FLEXBOX + счётчик) ============ */
+    .process { background: var(--ink); color: var(--paper); }
+    .process .section-note { color: #AEBBC3; }
+
+    .steps {
+      display: flex;
+      gap: 2rem;
+      margin: 2.5rem 0 0;
+      padding: 0;
+      list-style: none;
+      counter-reset: step;
+    }
+    .steps li {
+      flex: 1;
+      position: relative;
+      padding-top: 3.5rem;
+      counter-increment: step;
+    }
+    /* ::before рисует номер шага — здесь он уместен, ведь шаги идут по порядку */
+    .steps li::before {
+      content: counter(step);
+      position: absolute;
+      top: 0;
+      left: 0;
+      display: grid;
+      place-items: center;
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: 50%;
+      background: var(--signal);
+      color: var(--ink);
+      font-family: var(--font-head);
+      font-weight: 700;
+    }
+    .steps h3 { margin-bottom: 0.5rem; }
+    .steps p { color: #AEBBC3; margin: 0; }
+
+    /* ============ 7. ЦЕНЫ (ТАБЛИЦА) ============ */
+    .price-table {
+      width: 100%;
+      margin-top: 2rem;
+      border-collapse: collapse;
+    }
+    .price-table caption {
+      text-align: left;
+      color: var(--steel);
+      padding-bottom: 0.75rem;
+    }
+    .price-table th,
+    .price-table td {
+      padding: 1rem 1.25rem;
+      text-align: left;
+    }
+    .price-table thead th {
+      border-bottom: 3px solid var(--ink);
+      font-family: var(--font-head);
+      font-size: 0.95rem;
+    }
+    .price-table td:last-child,
+    .price-table th:last-child { text-align: right; white-space: nowrap; }
+
+    /* Зебра через :nth-child и подсветка строки при наведении */
+    .price-table tbody tr:nth-child(even) { background: #E6EBE8; }
+    .price-table tbody tr { transition: background-color 0.2s ease; }
+    .price-table tbody tr:hover { background: #F8E7A8; }
+
+    /* ============ 8. ФОРМА ЗАПИСИ ============ */
+    .order { background: #E6EBE8; }
+
+    .order-inner {
+      display: grid;
+      grid-template-columns: 0.8fr 1.2fr;
+      gap: 3rem;
+      align-items: start;
+    }
+
+    .contacts { color: var(--steel); }
+    .contacts strong { color: var(--ink); }
+
+    .form { display: grid; gap: 1.25rem; }
+
+    .field { display: grid; gap: 0.4rem; }
+    .field label { font-weight: 500; }
+
+    .field input,
+    .field select,
+    .field textarea {
+      width: 100%;
+      padding: 0.8rem 1rem;
+      border: 2px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+      color: var(--ink);
+      font: inherit;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .field textarea { min-height: 110px; resize: vertical; }
+
+    .field ::placeholder { color: #8A979F; }
+
+    /* Состояние фокуса */
+    .field input:focus,
+    .field select:focus,
+    .field textarea:focus {
+      outline: none;
+      border-color: var(--ink);
+      box-shadow: 0 0 0 4px rgba(242, 194, 48, 0.55);
+    }
+
+    /* Валидация: красная рамка для неверного, зелёная для верного
+       (только после того, как человек начал вводить текст) */
+    .field input:not(:placeholder-shown):invalid { border-color: var(--error); }
+    .field input:not(:placeholder-shown):valid { border-color: var(--ok); }
+
+    .hint { font-size: 0.875rem; color: var(--steel); margin: 0; }
+
+    /* Сообщение об ошибке показывается, только когда поле неверное */
+    .error-text {
+      display: none;
+      margin: 0;
+      font-size: 0.875rem;
+      color: var(--error);
+    }
+    .field input:not(:placeholder-shown):invalid ~ .error-text { display: block; }
+
+    .check {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      font-size: 0.95rem;
+    }
+    .check input { width: 1.2rem; height: 1.2rem; margin-top: 0.25rem; accent-color: var(--ink); }
+
+    .form-status {
+      margin: 0;
+      padding: 1rem 1.25rem;
+      border-left: 5px solid var(--ok);
+      background: #fff;
+      font-weight: 500;
+      animation: fade-in 0.5s ease;
+    }
+    .form-status[hidden] { display: none; }
+
+    @keyframes fade-in {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: none; }
+    }
+
+    /* ============ 9. ПОДВАЛ И КНОПКА «НАВЕРХ» ============ */
+    .site-footer {
+      padding: 2rem 0;
+      background: var(--ink);
+      color: #AEBBC3;
+      font-size: 0.95rem;
+    }
+    .footer-inner {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.5rem 2rem;
+    }
+
+    /* position: fixed — кнопка всегда в правом нижнем углу экрана */
+    .to-top {
+      position: fixed;
+      right: 1.25rem;
+      bottom: 1.25rem;
+      display: grid;
+      place-items: center;
+      width: 3rem;
+      height: 3rem;
+      border: 2px solid var(--ink);
+      border-radius: 50%;
+      background: var(--signal);
+      color: var(--ink);
+      font-weight: 700;
+      text-decoration: none;
+      transition: transform 0.25s ease;
+    }
+    .to-top:hover { transform: translateY(-4px); }
+
+    /* ============ 10. АДАПТИВНОСТЬ (МЕДИА-ЗАПРОСЫ) ============ */
+
+    /* Планшеты */
+    @media (max-width: 900px) {
+      .hero-inner { grid-template-columns: 1fr; }
+      .hero-visual { order: -1; }               /* колесо — над текстом */
+      .services-grid { grid-template-columns: repeat(2, 1fr); }
+      .steps { flex-wrap: wrap; }
+      .steps li { flex: 1 1 40%; }
+      .order-inner { grid-template-columns: 1fr; }
+    }
+
+    /* Телефоны */
+    @media (max-width: 600px) {
+      .section { padding: 3rem 0; }
+      .header-inner { flex-direction: column; gap: 0.5rem; }
+      .nav-list { gap: 1rem; flex-wrap: wrap; justify-content: center; font-size: 0.95rem; }
+      .services-grid { grid-template-columns: 1fr; }
+      .steps { flex-direction: column; }
+      .price-table th,
+      .price-table td { padding: 0.75rem 0.5rem; }
+      .badge { right: auto; left: 50%; transform: translateX(-50%); white-space: nowrap; }
+    }
+
+    /* Если у человека включено «уменьшить анимацию» — выключаем вращение */
+    @media (prefers-reduced-motion: reduce) {
+      .wheel { animation: none; }
+      html { scroll-behavior: auto; }
+    }
+  </style>
+</head>
+
+<body id="top">
+
+  <!-- ШАПКА -->
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="#top" class="logo">Спица</a>
+      <nav aria-label="Основное меню">
+        <ul class="nav-list">
+          <li><a href="#services">Услуги</a></li>
+          <li><a href="#process">Как мы работаем</a></li>
+          <li><a href="#prices">Цены</a></li>
+          <li><a href="#order">Запись</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- ГЛАВНЫЙ ЭКРАН -->
+    <section class="hero">
+      <div class="container hero-inner">
+        <div class="hero-text">
+          <h1>Починим велосипед за один день</h1>
+          <p class="hero-lead">Небольшая мастерская в центре города. Чиним городские, горные и детские велосипеды, честно называем цену до начала работы.</p>
+          <a href="#order" class="btn">Записаться на ремонт</a>
+        </div>
+
+        <div class="hero-visual" aria-hidden="true">
+          <div class="wheel"></div>
+          <span class="badge">Работаем с 2014 года</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- УСЛУГИ -->
+    <section id="services" class="section">
+      <div class="container">
+        <h2>Что мы чиним</h2>
+        <p>От спущенной шины до полной разборки и смазки всех узлов.</p>
+
+        <div class="services-grid">
+          <article class="service">
+            <h3>Шины и камеры</h3>
+            <p>Заклеим прокол, заменим камеру или покрышку, накачаем до нужного давления.</p>
+          </article>
+          <article class="service">
+            <h3>Тормоза</h3>
+            <p>Отрегулируем, заменим колодки и тросики, прокачаем гидравлику.</p>
+          </article>
+          <article class="service">
+            <h3>Цепь и переключатели</h3>
+            <p>Подберём настройку скоростей, заменим цепь и звёзды, смажем трансмиссию.</p>
+          </article>
+          <article class="service">
+            <h3>Колёса</h3>
+            <p>Выправим «восьмёрку», заменим спицы, переберём втулки.</p>
+          </article>
+          <article class="service">
+            <h3>Полное ТО</h3>
+            <p>Проверим каждый узел, подтянем крепёж, оставим список рекомендаций.</p>
+          </article>
+          <article class="service">
+            <h3>Сборка нового велосипеда</h3>
+            <p>Соберём из коробки и настроим под ваш рост.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- КАК МЫ РАБОТАЕМ -->
+    <section id="process" class="section process">
+      <div class="container">
+        <h2>Как мы работаем</h2>
+        <p class="section-note">Четыре шага от звонка до готового велосипеда.</p>
+
+        <ol class="steps">
+          <li>
+            <h3>Вы записываетесь</h3>
+            <p>Оставляете заявку на сайте или звоните нам.</p>
+          </li>
+          <li>
+            <h3>Мы осматриваем</h3>
+            <p>Находим все неисправности и называем итоговую цену.</p>
+          </li>
+          <li>
+            <h3>Чиним</h3>
+            <p>Начинаем только после вашего согласия.</p>
+          </li>
+          <li>
+            <h3>Вы забираете</h3>
+            <p>Показываем, что сделано, и даём гарантию на работу.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- ЦЕНЫ -->
+    <section id="prices" class="section">
+      <div class="container">
+        <h2>Цены на основные работы</h2>
+
+        <table class="price-table">
+          <caption>Стоимость указана за работу, запчасти оплачиваются отдельно.</caption>
+          <thead>
+            <tr>
+              <th scope="col">Услуга</th>
+              <th scope="col">Срок</th>
+              <th scope="col">Цена</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Заклеить прокол</td><td>20 минут</td><td>300 ₽</td></tr>
+            <tr><td>Замена покрышки</td><td>30 минут</td><td>500 ₽</td></tr>
+            <tr><td>Регулировка тормозов</td><td>40 минут</td><td>600 ₽</td></tr>
+            <tr><td>Настройка переключателей</td><td>1 час</td><td>800 ₽</td></tr>
+            <tr><td>Правка колеса</td><td>1 час</td><td>900 ₽</td></tr>
+            <tr><td>Полное ТО</td><td>1 день</td><td>2 500 ₽</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ФОРМА ЗАПИСИ -->
+    <section id="order" class="section order">
+      <div class="container order-inner">
+        <div class="contacts">
+          <h2>Запишитесь на ремонт</h2>
+          <p>Оставьте заявку, и мы перезвоним в течение часа, чтобы выбрать удобное время.</p>
+          <p><strong>Адрес:</strong> ул. Примерная, 12</p>
+          <p><strong>Часы работы:</strong> ежедневно с 10:00 до 20:00</p>
+          <p><strong>Телефон:</strong> +7 (900) 000-00-00</p>
+        </div>
+
+        <form class="form" id="order-form">
+          <div class="field">
+            <label for="name">Ваше имя</label>
+            <input type="text" id="name" name="name" placeholder="Например, Анна" required minlength="2">
+            <p class="error-text">Введите имя — минимум 2 буквы.</p>
+          </div>
+
+          <div class="field">
+            <label for="phone">Телефон</label>
+            <input type="tel" id="phone" name="phone" placeholder="+7 900 000-00-00" required pattern="[0-9+()\s\-]{10,18}">
+            <p class="error-text">Введите телефон: от 10 цифр, можно с «+», скобками и дефисами.</p>
+          </div>
+
+          <div class="field">
+            <label for="email">Электронная почта</label>
+            <input type="email" id="email" name="email" placeholder="name@example.com" required>
+            <p class="error-text">Проверьте адрес: он должен выглядеть как name@example.com.</p>
+          </div>
+
+          <div class="field">
+            <label for="service">Что случилось?</label>
+            <select id="service" name="service" required>
+              <option value="">Выберите услугу</option>
+              <option>Шины и камеры</option>
+              <option>Тормоза</option>
+              <option>Цепь и переключатели</option>
+              <option>Колёса</option>
+              <option>Полное ТО</option>
+              <option>Сборка нового велосипеда</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="message">Комментарий</label>
+            <textarea id="message" name="message" placeholder="Расскажите, что сломалось"></textarea>
+            <p class="hint">Необязательно, но поможет нам подготовиться.</p>
+          </div>
+
+          <label class="check">
+            <input type="checkbox" name="agree" required>
+            <span>Согласен на обработку персональных данных</span>
+          </label>
+
+          <button type="submit" class="btn">Отправить заявку</button>
+
+          <p class="form-status" id="form-status" role="status" hidden>
+            Спасибо! Заявка отправлена, мы скоро перезвоним.
+          </p>
+        </form>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ПОДВАЛ -->
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <span>© 2026 Веломастерская «Спица»</span>
+      <span>Учебный проект</span>
+    </div>
+  </footer>
+
+  <!-- Кнопка «Наверх» -->
+  <a href="#top" class="to-top" aria-label="Наверх">↑</a>
+
+  <script>
+    // Отправки на сервер у нас нет, поэтому просто показываем сообщение об успехе.
+    const form = document.getElementById('order-form');
+    const status = document.getElementById('form-status');
+
+    form.addEventListener('submit', function (event) {
+      event.preventDefault();   // не перезагружаем страницу
+      status.hidden = false;    // показываем «Спасибо!»
+      form.reset();             // очищаем поля
+    });
+  </script>
+</body>
+</html>
